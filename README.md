@@ -10,6 +10,8 @@ Production ve Preview için aşağıdaki değerleri Vercel Project Settings > En
 | --- | --- |
 | `OPENAI_API_KEY` | Sunucu tarafında kullanılan OpenAI API anahtarı |
 | `OPENAI_TEXT_MODEL` | Opsiyonel; varsayılan `gpt-5.6-terra` |
+| `OPENROUTER_API_KEY` | Opsiyonel; varsa ücretsiz `openrouter/free` modeli öncelikli kullanılır |
+| `OPENROUTER_MODEL` | Opsiyonel; varsayılan `openrouter/free` |
 | `POLAR_ACCESS_TOKEN` | Polar Organization Access Token |
 | `POLAR_PRODUCT_ID` | Üretici paketine ait Polar ürün UUID'si |
 | `POLAR_SERVER` | Opsiyonel; test için `https://sandbox-api.polar.sh/v1` |

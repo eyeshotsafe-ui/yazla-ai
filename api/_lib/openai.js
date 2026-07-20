@@ -1,4 +1,5 @@
 const OPENAI_URL = 'https://api.openai.com/v1/responses';
+const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 function readOutput(response) {
   if (response.output_text) return response.output_text;
@@ -8,8 +9,33 @@ function readOutput(response) {
 }
 
 async function createJsonResponse({ name, schema, system, input, maxOutputTokens = 5000 }) {
+  if (process.env.OPENROUTER_API_KEY) {
+    const response = await fetch(OPENROUTER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        'HTTP-Referer': process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://bu-blond.vercel.app',
+        'X-Title': 'Yazla'
+      },
+      body: JSON.stringify({
+        model: process.env.OPENROUTER_MODEL || 'openrouter/free',
+        messages: [{ role: 'system', content: system }, { role: 'user', content: input }],
+        response_format: { type: 'json_schema', json_schema: { name, strict: true, schema } },
+        max_tokens: maxOutputTokens
+      })
+    });
+    const payload = await response.json();
+    if (!response.ok) {
+      const error = new Error(payload?.error?.message || 'OpenRouter isteği başarısız oldu.');
+      error.statusCode = response.status;
+      throw error;
+    }
+    try { return JSON.parse(payload.choices?.[0]?.message?.content || ''); }
+    catch { throw new Error('Ücretsiz model beklenen biçimde yanıt vermedi. Lütfen yeniden deneyin.'); }
+  }
   if (!process.env.OPENAI_API_KEY) {
-    const error = new Error('OPENAI_API_KEY Vercel ortam değişkeni eksik.');
+    const error = new Error('OPENROUTER_API_KEY veya OPENAI_API_KEY ortam değişkeni eksik.');
     error.statusCode = 503;
     throw error;
   }
