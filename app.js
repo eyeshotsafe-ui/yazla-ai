@@ -3,6 +3,15 @@ const $$ = s => [...document.querySelectorAll(s)];
 const app = $('#app'), landing = $('main'), toast = $('#toast');
 const screens = ['dashboard', 'studio', 'plan', 'generating', 'coloring', 'library'];
 let project = { idea: '', type: 'Pratik rehber', tone: 'Samimi ve güven veren', title: '', subtitle: '', chapters: [], content: [] };
+let userEmail = localStorage.getItem('yazla-user-email') || '';
+
+function openAuth() { $('#auth-modal').classList.remove('hidden'); setTimeout(() => $('#login-email').focus(), 120); }
+function closeAuth() { $('#auth-modal').classList.add('hidden'); }
+function completeLogin(email) {
+  userEmail = email || 'merhaba@yazla.studio'; localStorage.setItem('yazla-user-email', userEmail);
+  $('.profile b').textContent = userEmail.split('@')[0]; $('.profile small').textContent = userEmail;
+  closeAuth(); show('studio'); notify('Stüdyona hoş geldin.');
+}
 
 function show(screen) {
   if (screen === 'landing') { app.classList.add('hidden'); landing.classList.remove('hidden'); $('.topbar').classList.remove('hidden'); window.scrollTo(0, 0); return; }
@@ -15,9 +24,18 @@ function notify(message, isError = false) { toast.textContent = message; toast.s
 function setButton(button, text, busy) { button.disabled = busy; button.dataset.label ||= button.textContent; button.textContent = busy ? text : button.dataset.label; }
 async function request(path, body) { const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || 'İstek tamamlanamadı.'); return data; }
 
-$$('[data-screen]').forEach(el => el.addEventListener('click', () => show(el.dataset.screen)));
+$$('[data-screen]').forEach(el => el.addEventListener('click', event => {
+  if (el.dataset.screen === 'studio' && !userEmail) { event.preventDefault(); openAuth(); return; }
+  show(el.dataset.screen);
+}));
+$$('[data-open="login"]').forEach(el => el.addEventListener('click', openAuth));
+$$('[data-close-auth]').forEach(el => el.addEventListener('click', closeAuth));
+$('#email-login').onclick = () => { const email = $('#login-email').value.trim(); if (!/^\S+@\S+\.\S+$/.test(email)) { $('#login-email').focus(); return notify('Geçerli bir e-posta adresi yaz.', true); } completeLogin(email); };
+$('#google-login').onclick = () => completeLogin('google-kullanici@yazla.studio');
+$('#login-email').addEventListener('keydown', event => { if (event.key === 'Enter') $('#email-login').click(); });
+if (userEmail) { $('.profile b').textContent = userEmail.split('@')[0]; $('.profile small').textContent = userEmail; }
 $('.idea-chips').addEventListener('click', e => { if (e.target.tagName === 'BUTTON') $('#hero-idea').value = e.target.textContent; });
-$('#hero-submit').onclick = () => { $('#book-idea').value = $('#hero-idea').value; show('studio'); };
+$('#hero-submit').onclick = () => { $('#book-idea').value = $('#hero-idea').value; if (!userEmail) return openAuth(); show('studio'); };
 
 function renderChapters() {
   $('#chapters').innerHTML = project.chapters.map((chapter, i) => `<div class="chapter"><b>${String(i + 1).padStart(2, '0')}</b><input value="${escapeHtml(chapter.title)}" aria-label="Bölüm ${i + 1}"><button title="Bölümü sil">×</button></div>`).join('');

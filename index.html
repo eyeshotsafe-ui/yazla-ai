@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="reader.css" />
+    <link rel="stylesheet" href="premium.css" />
   </head>
   <body>
     <header class="topbar">
@@ -32,13 +33,14 @@
 
       <section class="trust"><span>Ürünlerini burada satmaya hazırla</span><b>etsy</b><b>shopier</b><b>Amazon KDP</b><b>Gumroad</b><b>iyzico</b></section>
 
-      <section class="showcase" id="ozellikler">
-        <div class="section-copy"><span class="kicker">TEK BİR AKIŞ</span><h2>Yazı değil,<br />ürün çıkar.</h2><p>Ham metinden yayımlanabilir dosyaya giden tüm adımlar, tek bir yaratıcı çalışma alanında.</p></div>
-        <div class="feature-grid">
-          <article class="feature-card tall"><span class="icon">✦</span><h3>Bölüm bölüm karar ver</h3><p>Planı onayla, tonu değiştir, her bölümü istediğin gibi yönlendir.</p><div class="mini-outline"><span class="done">✓</span> Fikir ve hedef kitle <span class="done">✓</span> İçindekiler <span class="active-dot"></span> 3. Bölüm yazılıyor</div></article>
-          <article class="feature-card cover-card"><span class="icon">▧</span><h3>Kapak stüdyosu</h3><p>Tarzını seç; kitap kapağın birden çok alternatifle hazır olsun.</p><div class="book-cover"><span>ODAĞINI<br/>BUL</span><small>bir başlangıç rehberi</small></div></article>
-          <article class="feature-card"><span class="icon">◌</span><h3>Boyama kitabı</h3><p>Sayfa planı, tutarlı karakterler ve baskıya uygun çizimler.</p><div class="scribble">✿ &nbsp; ☼ &nbsp; ♡ &nbsp; ✦</div></article>
-          <article class="feature-card export"><span class="icon">↓</span><h3>Satışa hazır dışa aktar</h3><p>PDF, EPUB ve DOCX olarak indir. Etsy ve KDP için teknik ölçüler hazır.</p></article>
+      <section class="showcase premium-showcase" id="ozellikler">
+        <div class="section-copy premium-copy"><span class="kicker">YAZLA OS / 01</span><h2>Fikrinden<br/><i>katalog</i> yarat.</h2><p>Her fikir, yazım kararlarını sana bırakan; kapağı ve satış dosyasıyla tamamlanan küçük bir dijital ürüne dönüşür.</p><div class="proof-row"><span><b>01</b> fikir</span><i></i><span><b>06</b> bölüm</span><i></i><span><b>01</b> ürün</span></div></div>
+        <div class="showcase-stage">
+          <div class="ambient orb-one"></div><div class="ambient orb-two"></div>
+          <article class="command-card"><div class="command-top"><span class="live-dot"></span><b>Yazla asistan</b><small>canlı üretim</small></div><div class="command-title"><span>✦</span><div><small>ŞİMDİ YAZILIYOR</small><h3>Serbest çalışanlar için<br/>değer odaklı fiyatlandırma</h3></div></div><div class="chapter-progress"><div><span>01</span><b>Doğru başlangıç</b><em>tamamlandı</em></div><div><span>02</span><b>Teklifin değeri</b><em>tamamlandı</em></div><div class="writing"><span>03</span><b>Fiyatı güvenle söylemek</b><em><i></i> yazılıyor</em></div></div><div class="command-foot"><span>3.240 kelime</span><span>◌ 68% tamamlandı</span></div></article>
+          <div class="mini-card cover-float"><span>✦ KAPAK STÜDYOSU</span><div class="premium-cover"><small>YAZLA<br/>STUDIO</small><b>DEĞERİNİ<br/>SÖYLE</b><i>freelance fiyatlandırma</i></div></div>
+          <div class="mini-card export-float"><span>↗</span><div><b>Satışa hazır</b><small>PDF · EPUB · DOCX</small></div></div>
+          <div class="mini-card color-float"><span>◌</span><div><b>Boyama kitabı</b><small>24 baskı sayfası</small></div><i>✿</i></div>
         </div>
       </section>
 
@@ -47,6 +49,7 @@
       <section class="pricing" id="fiyatlar"><span class="kicker">BASİT FİYATLANDIRMA</span><h2>İlk fikrin ücretsiz.</h2><p>Yayınlamaya hazır olduğunda paketi seçersin.</p><div class="price-card"><div><span class="plan-label">EN POPÜLER</span><h3>Üretici</h3><p>Her ay yeni ürünler çıkaranlar için.</p></div><div class="price"><strong>₺699</strong><span>/ ay</span></div><button class="button dark" data-screen="studio">Üretmeye başla →</button><ul><li>250 üretim kredisi</li><li>PDF, EPUB ve DOCX dışa aktarımı</li><li>Ticari kullanım lisansı</li></ul></div></section>
     </main>
 
+    <div class="auth-modal hidden" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title"><div class="auth-backdrop" data-close-auth></div><section class="auth-card"><button class="auth-close" data-close-auth aria-label="Kapat">×</button><div class="auth-visual"><div class="auth-orb"></div><a class="brand" href="#"><span class="brand-mark">Y</span> yazla<span>.</span></a><div><span class="auth-label">YENİ FİKİRLER İÇİN</span><h2>Bir sonraki<br/>ürünün burada.</h2><p>Fikrini kaybetme; kitaplığın, taslakların ve indirmelerin tek yerde kalsın.</p></div><div class="auth-sparkles">✦ &nbsp; ✧ &nbsp; ✦</div></div><div class="auth-form"><span class="kicker">STÜDYONA HOŞ GELDİN</span><h2 id="auth-title">Üretmeye devam et.</h2><p>Giriş yap veya hesabını birkaç saniyede oluştur.</p><button class="oauth-btn" id="google-login"><span>G</span> Google ile devam et</button><div class="or"><span></span>ve e-posta ile<span></span></div><label>E-posta adresin<input id="login-email" type="email" placeholder="ornek@eposta.com" autocomplete="email" /></label><button class="button primary wide" id="email-login">Devam et →</button><small>Devam ederek <u>Kullanım Koşulları</u> ve <u>Gizlilik Politikası</u>'nı kabul edersin.</small></div></section></div>
     <section class="app-shell hidden" id="app">
       <aside><a class="brand" href="#" data-screen="landing"><span class="brand-mark">Y</span> yazla<span>.</span></a><div class="credit"><small>KREDİLER</small><strong id="credit-count">48</strong><span>ücretsiz kredi</span><div><b>Başlangıç paketi</b><button>Yükselt →</button></div></div><nav class="side-nav"><button class="active" data-screen="dashboard">▦ <span>Kontrol paneli</span></button><button data-screen="studio">⊕ <span>e‑Kitap oluştur</span></button><button data-screen="coloring">◌ <span>Boyama kitabı</span><i>YENİ</i></button><button data-screen="library">▥ <span>Kitaplarım</span></button><button>⌁ <span>Tasarım stüdyosu</span><i>YAKINDA</i></button></nav><div class="profile"><div class="avatar">S</div><span><b>Senin stüdyon</b><small>Üretmeye devam et</small></span></div></aside>
       <div class="workspace">
