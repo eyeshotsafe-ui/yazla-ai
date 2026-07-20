@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yazla — fikrini satılabilir kitaba dönüştür</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#anasayfa"><span class="brand-mark">Y</span> yazla<span>.</span></a>
+      <nav><a href="#nasil">Nasıl çalışır?</a><a href="#ozellikler">Özellikler</a><a href="#fiyatlar">Fiyatlar</a></nav>
+      <div class="nav-actions"><button class="text-btn" data-open="login">Giriş yap</button><button class="button primary" data-screen="studio">Ücretsiz başla <b>→</b></button></div>
+    </header>
+
+    <main id="anasayfa">
+      <section class="hero">
+        <div class="eyebrow"><i></i> 3.000+ üretici dijital ürününü Yazla ile hazırlıyor</div>
+        <h1>Fikrini yaz.<br /><em>Gelire dönüştür.</em></h1>
+        <p>Bir cümleyle başla. Yapay zekâ bölümleri, kapak tasarımını ve satışa hazır dosyanı seninle birlikte oluştursun.</p>
+        <div class="idea-box">
+          <textarea id="hero-idea" placeholder="Örn. Yeni başlayanlar için evde kahve demleme rehberi"></textarea>
+          <button class="round-send" id="hero-submit" aria-label="Kitap oluşturmaya başla">↑</button>
+        </div>
+        <div class="idea-chips"><button>İlk dijital ürününü satma rehberi</button><button>Çocuklar için doğa boyama kitabı</button><button>Freelance çalışanlar için fiyatlandırma</button></div>
+        <small>Kart gerekmez · İstediğin zaman iptal et · Ticari kullanım hakkı sende</small>
+      </section>
+
+      <section class="trust"><span>Ürünlerini burada satmaya hazırla</span><b>etsy</b><b>shopier</b><b>Amazon KDP</b><b>Gumroad</b><b>iyzico</b></section>
+
+      <section class="showcase" id="ozellikler">
+        <div class="section-copy"><span class="kicker">TEK BİR AKIŞ</span><h2>Yazı değil,<br />ürün çıkar.</h2><p>Ham metinden yayımlanabilir dosyaya giden tüm adımlar, tek bir yaratıcı çalışma alanında.</p></div>
+        <div class="feature-grid">
+          <article class="feature-card tall"><span class="icon">✦</span><h3>Bölüm bölüm karar ver</h3><p>Planı onayla, tonu değiştir, her bölümü istediğin gibi yönlendir.</p><div class="mini-outline"><span class="done">✓</span> Fikir ve hedef kitle <span class="done">✓</span> İçindekiler <span class="active-dot"></span> 3. Bölüm yazılıyor</div></article>
+          <article class="feature-card cover-card"><span class="icon">▧</span><h3>Kapak stüdyosu</h3><p>Tarzını seç; kitap kapağın birden çok alternatifle hazır olsun.</p><div class="book-cover"><span>ODAĞINI<br/>BUL</span><small>bir başlangıç rehberi</small></div></article>
+          <article class="feature-card"><span class="icon">◌</span><h3>Boyama kitabı</h3><p>Sayfa planı, tutarlı karakterler ve baskıya uygun çizimler.</p><div class="scribble">✿ &nbsp; ☼ &nbsp; ♡ &nbsp; ✦</div></article>
+          <article class="feature-card export"><span class="icon">↓</span><h3>Satışa hazır dışa aktar</h3><p>PDF, EPUB ve DOCX olarak indir. Etsy ve KDP için teknik ölçüler hazır.</p></article>
+        </div>
+      </section>
+
+      <section class="steps" id="nasil"><span class="kicker">NASIL ÇALIŞIR?</span><h2>Fikirden vitrine, üç kısa adım.</h2><div class="step-list"><article><b>01</b><h3>Fikrini anlat</h3><p>Ne bildiğini, kim için yazdığını bir iki cümleyle söyle.</p></article><article><b>02</b><h3>Birlikte şekillendir</h3><p>Başlığı, bölüm planını ve yazım tonunu onaylayarak ilerle.</p></article><article><b>03</b><h3>İndir ve sat</h3><p>Kapaklı, düzenlenmiş kitabını mağazana yüklemeye hazır al.</p></article></div></section>
+
+      <section class="pricing" id="fiyatlar"><span class="kicker">BASİT FİYATLANDIRMA</span><h2>İlk fikrin ücretsiz.</h2><p>Yayınlamaya hazır olduğunda paketi seçersin.</p><div class="price-card"><div><span class="plan-label">EN POPÜLER</span><h3>Üretici</h3><p>Her ay yeni ürünler çıkaranlar için.</p></div><div class="price"><strong>₺699</strong><span>/ ay</span></div><button class="button dark" data-screen="studio">Üretmeye başla →</button><ul><li>250 üretim kredisi</li><li>PDF, EPUB ve DOCX dışa aktarımı</li><li>Ticari kullanım lisansı</li></ul></div></section>
+    </main>
+
+    <section class="app-shell hidden" id="app">
+      <aside><a class="brand" href="#" data-screen="landing"><span class="brand-mark">Y</span> yazla<span>.</span></a><div class="credit"><small>KREDİLER</small><strong id="credit-count">48</strong><span>ücretsiz kredi</span><div><b>Başlangıç paketi</b><button>Yükselt →</button></div></div><nav class="side-nav"><button class="active" data-screen="dashboard">▦ <span>Kontrol paneli</span></button><button data-screen="studio">⊕ <span>e‑Kitap oluştur</span></button><button data-screen="coloring">◌ <span>Boyama kitabı</span><i>YENİ</i></button><button data-screen="library">▥ <span>Kitaplarım</span></button><button>⌁ <span>Tasarım stüdyosu</span><i>YAKINDA</i></button></nav><div class="profile"><div class="avatar">S</div><span><b>Senin stüdyon</b><small>Üretmeye devam et</small></span></div></aside>
+      <div class="workspace">
+        <section class="screen" id="dashboard"><div class="welcome"><span>21 TEMMUZ, SALI</span><h2>Merhaba, üretmeye hazır mısın?</h2><p>Bugün bir fikirden yeni bir dijital ürün çıkarabilirsin.</p></div><div class="stats"><article><span>◫</span><b id="book-count">2</b><small>Toplam kitap</small></article><article><span>≡</span><b id="chapter-count">14</b><small>Oluşturulan bölüm</small></article><article><span>✎</span><b id="word-count">8.420</b><small>Yazılan kelime</small></article></div><div class="projects-head"><h3>Son projeler</h3><button data-screen="studio">+ Yeni proje</button></div><div class="projects" id="projects"><article class="project-card"><div class="project-cover olive">FREELANCE<br/><em>FİYATLAMA</em></div><span>Taslak</span><h3>Freelance fiyat rehberi</h3><p>Bugün düzenlendi</p></article><article class="project-card"><div class="project-cover lilac">KÜÇÜK<br/><em>ALIŞKANLIKLAR</em></div><span>Taslak</span><h3>Alışkanlıkların gücü</h3><p>Dün düzenlendi</p></article><button class="new-project" data-screen="studio">＋<b>Yeni proje</b><small>Sıfırdan başla</small></button></div></section>
+        <section class="screen hidden" id="studio"><div class="builder-header"><button class="back" data-screen="dashboard">← Kontrol paneli</button><span>e‑KİTAP OLUŞTUR</span></div><div class="builder-card"><span class="kicker">YAPAY ZEKÂ YAZARIN HAZIR</span><h2>Hangi kitabı<br/>ortaya çıkaralım?</h2><p>Konunu anlat. Yazla; hedef kitle, açı, başlıklar ve bölüm planı için ilk öneriyi hazırlasın.</p><label>Kitap fikrin</label><textarea id="book-idea" placeholder="Örn. Serbest çalışan tasarımcılar için müşteri bulma ve fiyat belirleme rehberi"></textarea><div class="builder-options"><label>Kitap türü<select id="book-type"><option>Pratik rehber</option><option>Çalışma kitabı</option><option>Hikâye / kurgu</option><option>Eğitim materyali</option></select></label><label>Yazım tonu<select><option>Samimi ve güven veren</option><option>Profesyonel</option><option>Enerjik ve cesur</option></select></label></div><button class="button primary wide" id="plan-button">✦ Bölüm planını oluştur</button></div></section>
+        <section class="screen hidden" id="plan"><div class="builder-header"><button class="back" data-screen="studio">← Fikri düzenle</button><span>ADIM 2 / 3</span></div><div class="plan-layout"><div><span class="kicker">KİTAP PLANI</span><h2 id="plan-title">Fikrinden doğan kitap</h2><p class="muted">Aşağıdaki bölümleri düzenleyebilir, silebilir veya ekleyebilirsin.</p><div class="chapter-list" id="chapters"></div><button class="add-chapter" id="add-chapter">+ Bölüm ekle</button></div><aside class="plan-side"><div class="cover-preview"><small>YAZLA YAYINLARI</small><b id="cover-title">KENDİ YOLUNU<br/>ÇİZ</b><i>pratik bir rehber</i></div><p><b>Yaklaşık 7.500 kelime</b><br/>6 bölüm · 35-45 sayfa</p><button class="button dark wide" id="generate-button">Kitabı oluşturmaya başla →</button></aside></div></section>
+        <section class="screen hidden" id="generating"><div class="writing-card"><div class="writing-top"><span class="pulse"></span> Yazla kitabını hazırlıyor <small id="progress-label">Plan inceleniyor</small></div><div class="generation-grid"><div><div class="agent"><span>Y</span><div><b>Yazla Asistan</b><small>kitabın üzerinde çalışıyor</small></div></div><ol id="generation-steps"><li class="complete">✓ Fikrini ve hedef kitleyi anladı</li><li class="complete">✓ Bölüm planını hazırladı</li><li class="current">○ Bölüm 1 yazılıyor</li><li>○ Kapak tasarlanacak</li><li>○ Kitap düzenlenecek</li></ol></div><div class="live-page"><div class="page-lines"></div><p id="live-text">İlk sayfalar şekilleniyor...</p></div></div><div class="progress"><i id="progress-bar"></i></div><div class="writing-bottom"><button class="back" data-screen="plan">☷ Planı düzenle</button><span>Yazla çalışıyor…</span></div></div></section>
+        <section class="screen hidden" id="coloring"><div class="coloring-card"><span class="kicker">◌ BASKIYA UYGUN BOYAMA KİTABI</span><h2>Renklendirecek<br/>bir dünya kur.</h2><p>Fikrini ve tarzını seç. Yazla sayfaları planlasın, her bir çizimi baskıya uygun hazırlasın.</p><label>Boyama kitabın ne hakkında?</label><textarea id="color-idea" placeholder="Örn. İstanbul'da maceraya çıkan sevimli kediler"></textarea><div class="builder-options"><label>Çizim tarzı<select><option>Sevimli çizgi karakter</option><option>Kalın konturlu minimal</option><option>Botanik ve detaylı</option></select></label><label>Sayfa sayısı<select><option>24 sayfa</option><option>32 sayfa</option><option>48 sayfa</option></select></label></div><label class="check"><input type="checkbox" checked /> Tekrarlayan karakterleri koru</label><button class="button primary wide" id="color-button">✦ Sayfa planını oluştur</button></div></section>
+        <section class="screen hidden" id="library"><div class="welcome"><span>KİTAPLIĞIN</span><h2>Ürettiğin işler</h2><p>Projelerini görüntüle, düzenle veya satışa hazır dosyalarını indir.</p></div><div class="projects library-projects"></div></section>
+      </div>
+    </section>
+    <div class="toast hidden" id="toast">Projen hazır! Kitaplığına eklendi.</div>
+    <script src="app.js"></script>
+  </body>
+</html>
