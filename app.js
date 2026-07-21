@@ -2,7 +2,7 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const app = $('#app'), landing = $('main'), toast = $('#toast');
 const screens = ['dashboard', 'studio', 'plan', 'generating', 'coloring', 'library'];
-let project = { idea: '', type: 'Pratik rehber', tone: 'Samimi ve güven veren', title: '', subtitle: '', chapters: [], content: [] };
+let project = { idea: '', type: 'Pratik rehber', tone: 'Samimi ve güven veren', title: '', subtitle: '', chapters: [], content: [], coverChoice: 'editorial' };
 let userEmail = localStorage.getItem('yazla-user-email') || '';
 
 function openAuth() { $('#auth-modal').classList.remove('hidden'); setTimeout(() => $('#login-email').focus(), 120); }
@@ -18,6 +18,8 @@ function show(screen) {
   landing.classList.add('hidden'); $('.topbar').classList.add('hidden'); app.classList.remove('hidden');
   screens.forEach(id => $('#' + id).classList.toggle('hidden', id !== screen));
   $$('.side-nav button').forEach(b => b.classList.toggle('active', b.dataset.screen === screen || (['plan', 'generating'].includes(screen) && b.dataset.screen === 'studio')));
+  if (screen === 'dashboard') renderDashboard();
+  if (screen === 'library' && !project.content.length) renderLibrary();
   window.scrollTo(0, 0);
 }
 function notify(message, isError = false) { toast.textContent = message; toast.style.background = isError ? '#a84837' : ''; toast.classList.remove('hidden'); setTimeout(() => toast.classList.add('hidden'), 4500); }
@@ -54,6 +56,16 @@ $('#login-email').addEventListener('keydown', event => { if (event.key === 'Ente
 if (userEmail) { $('.profile b').textContent = userEmail.split('@')[0]; $('.profile small').textContent = userEmail; }
 $('.idea-chips').addEventListener('click', e => { if (e.target.tagName === 'BUTTON') $('#hero-idea').value = e.target.textContent; });
 $('#hero-submit').onclick = () => { $('#book-idea').value = $('#hero-idea').value; if (!userEmail) return openAuth(); show('studio'); };
+$$('[data-preview]').forEach(button => button.addEventListener('click', () => {
+  $$('[data-preview]').forEach(item => item.classList.toggle('active', item === button));
+  $$('[data-preview-page]').forEach(page => page.classList.toggle('active', page.dataset.previewPage === button.dataset.preview));
+  $('.preview-count').textContent = button.dataset.preview === 'cover' ? '01 / 02' : '02 / 02';
+}));
+$$('[data-cover-choice]').forEach(button => button.addEventListener('click', () => {
+  project.coverChoice = button.dataset.coverChoice;
+  $$('[data-cover-choice]').forEach(item => item.classList.toggle('active', item === button));
+  $('#plan-cover-preview').dataset.cover = project.coverChoice;
+}));
 
 function renderChapters() {
   $('#chapters').innerHTML = project.chapters.map((chapter, i) => `<div class="chapter"><b>${String(i + 1).padStart(2, '0')}</b><input value="${escapeHtml(chapter.title)}" aria-label="Bölüm ${i + 1}"><button title="Bölümü sil">×</button></div>`).join('');
@@ -65,7 +77,7 @@ function escapeHtml(value = '') { return value.replace(/[&<>'"]/g, c => ({ '&':'
 $('#plan-button').onclick = async () => {
   const button = $('#plan-button'); const idea = $('#book-idea').value.trim();
   if (!idea) return $('#book-idea').focus();
-  project.idea = idea; project.type = $('#book-type').value; project.tone = $('.builder-options select:nth-of-type(2)')?.value || 'Samimi ve güven veren';
+  project.idea = idea; project.type = $('#book-type').value; project.tone = $('#book-tone').value;
   try {
     setButton(button, '✦ Plan hazırlanıyor…', true);
     const plan = await request('/api/generate-plan', { idea: project.idea, type: project.type, tone: project.tone });
@@ -114,16 +126,37 @@ function createLocalChapter(chapter, index) {
   ], takeaway: `${topic} için en iyi başlangıç, tek bir okuyucu ihtiyacını netleştirip ona hemen uygulanabilir bir çözüm sunmaktır.` };
 }
 function createCover() {
-  const palettes = [['#293f34','#a2bd55'], ['#62548a','#e3b4a8'], ['#245365','#9ad7ca'], ['#6b3e48','#f5c76e']];
-  const pick = palettes[(project.title.length || 0) % palettes.length];
-  return { background: pick[0], accent: pick[1], label: project.type || 'Pratik rehber' };
+  return createCoverFor(project);
 }
-function saveProject() { const books = JSON.parse(localStorage.getItem('yazla-books') || '[]'); books.unshift({ ...project, savedAt: new Date().toISOString() }); localStorage.setItem('yazla-books', JSON.stringify(books.slice(0, 10))); }
+function createCoverFor(book) {
+  const choices = { editorial: ['#293f34','#d8ef68'], warm: ['#9a5d4c','#f0c991'], bold: ['#191e3b','#f25840'] };
+  const pick = choices[book.coverChoice] || choices.editorial;
+  return { background: pick[0], accent: pick[1], label: book.type || 'Pratik rehber' };
+}
+function saveProject() { const books = savedBooks(); books.unshift({ ...project, savedAt: new Date().toISOString() }); localStorage.setItem('yazla-books', JSON.stringify(books.slice(0, 10))); }
+function savedBooks() { try { return JSON.parse(localStorage.getItem('yazla-books') || '[]'); } catch { return []; } }
+function countWords(book) { return (book.content || []).reduce((total, chapter) => total + JSON.stringify(chapter).split(/\s+/).length, 0); }
+function projectCard(book, index) {
+  const cover = book.cover || createCoverFor(book); const date = book.savedAt ? new Date(book.savedAt).toLocaleDateString('tr-TR') : 'Taslak';
+  return `<button class="project-card saved-project" data-project-index="${index}"><div class="project-cover" style="background:linear-gradient(145deg,${cover.background},#17231e)"><small>YAZLA STUDIO</small>${escapeHtml(book.title || 'İsimsiz kitap')}</div><span>Hazır</span><h3>${escapeHtml(book.title || 'İsimsiz kitap')}</h3><p>${date} · ${book.content?.length || 0} bölüm</p></button>`;
+}
+function bindProjectCards(books) { $$('[data-project-index]').forEach(card => card.onclick = () => { project = books[Number(card.dataset.projectIndex)]; renderBook(); show('library'); }); }
+function renderDashboard() {
+  const books = savedBooks(); const chapters = books.reduce((sum, book) => sum + (book.content?.length || 0), 0); const words = books.reduce((sum, book) => sum + countWords(book), 0);
+  $('#book-count').textContent = books.length; $('#chapter-count').textContent = chapters; $('#word-count').textContent = words.toLocaleString('tr-TR');
+  $('#projects').innerHTML = books.slice(0, 2).map((book, index) => projectCard(book, index)).join('') + `<button class="new-project" data-new-project>＋<b>Yeni proje</b><small>Sıfırdan başla</small></button>`;
+  $$('[data-new-project]').forEach(button => button.onclick = () => show('studio')); bindProjectCards(books);
+}
+function renderLibrary() {
+  const books = savedBooks(); const page = $('#library');
+  page.innerHTML = `<div class="welcome"><span>KİTAPLIĞIN</span><h2>Ürettiğin işler</h2><p>Projelerini görüntüle ve satışa hazır dosyalarını indir.</p></div><div class="projects library-projects">${books.length ? books.map((book, index) => projectCard(book, index)).join('') : '<div class="empty-library"><span>✦</span><h3>İlk kitabın burada görünecek.</h3><p>Bir fikirle başla; Yazla planı, kapağı ve içeriği birlikte hazırlasın.</p><button class="button primary" data-empty-create>İlk kitabımı oluştur →</button></div>'}</div>`;
+  bindProjectCards(books); $('[data-empty-create]')?.addEventListener('click', () => show('studio'));
+}
 function renderBook() {
   const page = $('#library');
   const cover = project.cover || createCover();
   page.innerHTML = `<div class="welcome"><span>TAMAMLANDI · KAPAK + İÇERİK</span><h2>${escapeHtml(project.title)}</h2><p>${escapeHtml(project.subtitle || 'Yapay zekâ ile oluşturulan özgün e-kitap taslağın.')}</p></div><div class="cover-finish"><div class="cover-swatch" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>YAZLA STUDIO</small><b>${escapeHtml(project.title)}</b><i>${escapeHtml(project.subtitle || cover.label)}</i></div><div><span class="kicker">KAPAK TASARIMI TAMAMLANDI</span><h3>Kitabın için özgün renk ve tipografi dünyası hazır.</h3><p>Kapak, sayfa düzeni ve içerik birlikte satışa uygun bir ürün olarak paketlendi.</p></div></div><div class="book-actions"><button class="button dark" id="print-book">PDF olarak kaydet</button><button class="button primary" id="new-book">Yeni kitap oluştur →</button></div><article class="reader" id="reader"><div class="reader-cover" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>YAZLA YAYINLARI</small><h1>${escapeHtml(project.title)}</h1><p>${escapeHtml(project.subtitle || '')}</p><b>2026</b></div><div class="reader-page toc"><h2>İçindekiler</h2>${project.content.map((c, i) => `<p><span>${String(i + 1).padStart(2, '0')}</span>${escapeHtml(c.title)}</p>`).join('')}</div>${project.content.map((chapter, i) => `<section class="reader-page"><small>BÖLÜM ${String(i + 1).padStart(2, '0')}</small><h2>${escapeHtml(chapter.title)}</h2><p class="intro">${escapeHtml(chapter.intro)}</p>${chapter.sections.map(s => `<h3>${escapeHtml(s.heading)}</h3><p>${escapeHtml(s.body)}</p>`).join('')}<aside><b>Bu bölümden aklında kalsın</b><p>${escapeHtml(chapter.takeaway)}</p></aside></section>`).join('')}</article>`;
-  $('#new-book').onclick = () => show('studio'); $('#print-book').onclick = printBook;
+  $('#new-book').onclick = () => { project = { idea: '', type: 'Pratik rehber', tone: 'Samimi ve güven veren', title: '', subtitle: '', chapters: [], content: [], coverChoice: 'editorial' }; $('#book-idea').value = ''; show('studio'); }; $('#print-book').onclick = printBook;
 }
 function printBook() {
   const content = $('#reader').innerHTML;

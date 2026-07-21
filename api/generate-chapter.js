@@ -15,6 +15,11 @@ function fallbackChapter({ idea, chapter, chapterIndex }) {
     { heading: 'Geri bildirimle iyileştir', body: 'İlk taslak nihai ürün değildir. Hedef kitlenin kullandığı dili dinle, anlaşılmayan bölümleri sadeleştir ve işe yarayan örnekleri çoğalt. Düzenli küçük iyileştirmeler, ürünü zamanla daha değerli yapar.' }
   ], takeaway: `${title} için odak noktan, okuyucunun hemen uygulayabileceği tek bir net sonraki adım vermek olmalıdır.` };
 }
+function isUsableChapter(content) {
+  if (!content?.title || !content?.intro || !Array.isArray(content.sections) || content.sections.length < 3) return false;
+  const sample = `${content.title} ${content.intro} ${content.sections.map(item => item.heading).join(' ')}`.toLocaleLowerCase('tr-TR');
+  return !/\b(chapter|introduction|key takeaway|how to|in this section)\b/.test(sample);
+}
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Yalnızca POST desteklenir.' });
@@ -26,6 +31,6 @@ module.exports = async (req, res) => {
       system: 'Sen titiz bir Türkçe kitap yazarı ve editörsün. Özgün, anlaşılır, pratik ve güvenli içerik yazarsın. Tıbbi, hukuki ya da finansal konularda kesin tavsiye, uydurma kaynak veya sonuç garantisi vermezsin. Metin, dijital kitap için temiz paragraflar halinde Türkçe yazılmalıdır.',
       input: `Kitap başlığı: ${bookTitle}\nAna fikir: ${idea}\nTür: ${type}\nYazım tonu: ${tone}\nBölüm ${chapterIndex + 1}/${chapterCount}: ${chapter.title}\nBölüm özeti: ${chapter.brief}\nBu bölümü yaklaşık 450-600 kelime olacak şekilde yaz. Giriş, 3-5 alt başlık ve uygulanabilir bir kapanış çıkarımı sun.`
     });
-    res.status(200).json(content);
+    res.status(200).json(isUsableChapter(content) ? content : fallbackChapter({ idea, chapter, chapterIndex }));
   } catch { res.status(200).json(fallbackChapter({ idea, chapter, chapterIndex })); }
 };
