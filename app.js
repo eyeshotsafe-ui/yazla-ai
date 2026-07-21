@@ -5,7 +5,18 @@ const screens = ['dashboard', 'studio', 'plan', 'generating', 'coloring', 'libra
 const supabaseClient = window.supabase?.createClient(window.EBOOKERA_CONFIG.supabaseUrl, window.EBOOKERA_CONFIG.supabasePublishableKey);
 let project = { idea: '', type: 'Pratik rehber', tone: 'Samimi ve güven veren', language: 'tr', chapterCount: 18, title: '', subtitle: '', titleOptions: [], chapters: [], content: [], coverChoice: 'editorial' };
 let userEmail = '';
-let credits = Number(localStorage.getItem('ebookera-credits') || localStorage.getItem('yazla-credits') || 48);
+let userId = '';
+let credits = 40;
+let uiLanguage = window.EbookeraI18n?.lang || localStorage.getItem('ebookera-ui-language') || 'tr';
+
+function creditKey(id = userId) { return `ebookera-credits-${id || 'guest'}`; }
+function loadCredits(user) {
+  userId = user?.id || ''; userEmail = user?.email || '';
+  const remoteCredits = Number(user?.user_metadata?.ebookera_credits);
+  const stored = localStorage.getItem(creditKey()); credits = Number.isFinite(remoteCredits) ? remoteCredits : (stored === null ? 40 : Number(stored));
+  updateCredits(credits, false);
+  if (user && !Number.isFinite(remoteCredits)) supabaseClient.auth.updateUser({ data: { ebookera_credits: 40, ebookera_plan: 'free' } });
+}
 
 function openAuth() { $('#auth-modal').classList.remove('hidden'); setTimeout(() => $('#login-email').focus(), 120); }
 function closeAuth() { $('#auth-modal').classList.add('hidden'); }
@@ -17,13 +28,13 @@ function completeLogin(email) {
 async function initAuth() {
   if (!supabaseClient) return notify('Oturum servisi yüklenemedi.', true);
   const { data } = await supabaseClient.auth.getSession();
-  if (data.session?.user?.email) { userEmail = data.session.user.email; $('.profile b').textContent = userEmail.split('@')[0]; $('.profile small').textContent = userEmail; }
+  if (data.session?.user?.email) { loadCredits(data.session.user); $('.profile b').textContent = userEmail.split('@')[0]; $('.profile small').textContent = userEmail; }
   supabaseClient.auth.onAuthStateChange((_event, session) => {
-    userEmail = session?.user?.email || '';
+    loadCredits(session?.user);
     if (userEmail) { $('.profile b').textContent = userEmail.split('@')[0]; $('.profile small').textContent = userEmail; closeAuth(); if (_event === 'SIGNED_IN') show('dashboard'); }
   });
 }
-function updateCredits(amount = credits) { credits = Math.max(0, amount); localStorage.setItem('ebookera-credits', credits); $('#credit-count').textContent = credits; }
+function updateCredits(amount = credits, sync = true) { credits = Math.max(0, amount); if (userId) localStorage.setItem(creditKey(), credits); $('#credit-count').textContent = credits; if ($('#toolbar-credits')) $('#toolbar-credits').textContent = credits; if (sync && userId) supabaseClient.auth.updateUser({ data: { ebookera_credits: credits } }); }
 
 function show(screen) {
   if (screen === 'landing') { app.classList.add('hidden'); landing.classList.remove('hidden'); $('.topbar').classList.remove('hidden'); window.scrollTo(0, 0); return; }
@@ -32,6 +43,7 @@ function show(screen) {
   $$('.side-nav button').forEach(b => b.classList.toggle('active', b.dataset.screen === screen || (['plan', 'generating'].includes(screen) && b.dataset.screen === 'studio')));
   if (screen === 'dashboard') renderDashboard();
   if (screen === 'library' && !project.content.length) renderLibrary();
+  window.EbookeraI18n?.translate(document.body);
   window.scrollTo(0, 0);
 }
 function notify(message, isError = false) { toast.textContent = message; toast.style.background = isError ? '#a84837' : ''; toast.classList.remove('hidden'); setTimeout(() => toast.classList.add('hidden'), 4500); }
@@ -75,12 +87,17 @@ $('#email-login').onclick = async () => {
   completeLogin(email);
 };
 $('#google-login').onclick = async () => {
+  try {
+    const response = await fetch(`${window.EBOOKERA_CONFIG.supabaseUrl}/auth/v1/settings`, { headers: { apikey: window.EBOOKERA_CONFIG.supabasePublishableKey } });
+    const settings = await response.json();
+    if (!settings?.external?.google) return notify(uiLanguage === 'en' ? 'Google sign-in is being configured. Please use email for now.' : 'Google girişi Supabase panelinde henüz etkinleştirilmedi. Şimdilik e-posta ile giriş yapabilirsin.', true);
+  } catch { return notify(uiLanguage === 'en' ? 'The sign-in service could not be reached.' : 'Giriş servisine ulaşılamadı.', true); }
   const { error } = await supabaseClient.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/` } });
   if (error) notify(error.message, true);
 };
 $('#login-email').addEventListener('keydown', event => { if (event.key === 'Enter') $('#email-login').click(); });
 $('#login-password').addEventListener('keydown', event => { if (event.key === 'Enter') $('#email-login').click(); });
-$('#logout-button').onclick = async () => { await supabaseClient.auth.signOut(); userEmail = ''; show('landing'); notify('Oturum kapatıldı.'); };
+$('#logout-button').onclick = async () => { await supabaseClient.auth.signOut(); userEmail = ''; userId = ''; credits = 40; show('landing'); notify(uiLanguage === 'en' ? 'Signed out.' : 'Oturum kapatıldı.'); };
 updateCredits(); initAuth();
 $('.idea-chips').addEventListener('click', e => { if (e.target.tagName === 'BUTTON') $('#hero-idea').value = e.target.textContent; });
 $('#hero-submit').onclick = () => { $('#book-idea').value = $('#hero-idea').value; if (!userEmail) return openAuth(); show('studio'); };
@@ -113,7 +130,16 @@ function updateFormatSummary() {
 $('#book-idea').addEventListener('input', updateIdeaCount);
 $$('[data-inspiration]').forEach(button => button.onclick = () => { $('#book-idea').value = button.dataset.inspiration; updateIdeaCount(); });
 ['#book-type', '#book-language', '#book-length'].forEach(selector => $(selector).addEventListener('change', updateFormatSummary));
+$('#book-language').value = uiLanguage;
 updateFormatSummary();
+window.addEventListener('ebookera:language', event => {
+  uiLanguage = event.detail.language;
+  $('#book-language').value = uiLanguage;
+  updateIdeaCount(); updateFormatSummary(); updateGenerationCost();
+  if (!$('#dashboard').classList.contains('hidden')) renderDashboard();
+  if (!$('#library').classList.contains('hidden') && !project.content.length) renderLibrary();
+  window.EbookeraI18n?.translate(document.body);
+});
 
 function selectTitle(index) {
   const option = project.titleOptions[index]; if (!option) return;
@@ -131,6 +157,12 @@ function renderChapters() {
   $('#chapters').innerHTML = project.chapters.map((chapter, i) => `<div class="chapter"><b>${String(i + 1).padStart(2, '0')}</b><input value="${escapeHtml(chapter.title)}" aria-label="Bölüm ${i + 1}"><button title="Bölümü sil">×</button></div>`).join('');
   $$('.chapter input').forEach((input, i) => input.oninput = () => project.chapters[i].title = input.value);
   $$('.chapter button').forEach((button, i) => button.onclick = () => { project.chapters.splice(i, 1); renderChapters(); });
+  updateGenerationCost();
+}
+function bookCreditCost() { return project.chapters.length + 4; }
+function updateGenerationCost() {
+  const cost = bookCreditCost(); const label = uiLanguage === 'en' ? `Create ebook · ${cost} credits →` : `E-kitabı oluştur · ${cost} kredi →`;
+  ['#generate-button', '#generate-button-mobile'].forEach(selector => { if ($(selector)) $(selector).textContent = label; });
 }
 function escapeHtml(value = '') { return value.replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[c]); }
 
@@ -171,6 +203,9 @@ $('#regenerate-titles').onclick = async () => {
 
 async function startGeneration() {
   if (!project.chapters.length) return notify('En az bir bölüm eklemelisin.', true);
+  const cost = bookCreditCost();
+  if (!project.generationCostCharged && credits < cost) return notify(uiLanguage === 'en' ? `You need ${cost} credits for this ebook. Upgrade to Pro to continue.` : `Bu e-kitap için ${cost} kredi gerekiyor. Devam etmek için Pro’ya geçebilirsin.`, true);
+  if (!project.generationCostCharged) { updateCredits(credits - cost); project.generationCostCharged = cost; }
   show('generating'); await generateBook();
 }
 $('#generate-button').onclick = startGeneration;
@@ -245,10 +280,11 @@ function renderLibrary() {
 function renderBook() {
   const page = $('#library');
   const cover = project.cover || createCover();
-  const en = project.language === 'en';
-  const copy = en ? { done: 'COMPLETE · COVER + CONTENT', desc: 'Your original AI-assisted ebook draft.', coverDone: 'COVER DESIGN COMPLETE', coverTitle: 'A distinct color and typography system is ready for your book.', coverBody: 'The cover, layout, and content are packaged as one publication-ready product.', pdf: 'Save as PDF', fresh: 'Create another book →', publisher: 'EBOOKERA PUBLISHING', toc: 'Contents', chapter: 'CHAPTER', takeaway: 'Key takeaway' } : { done: 'TAMAMLANDI · KAPAK + İÇERİK', desc: 'Yapay zekâ ile oluşturulan özgün e-kitap taslağın.', coverDone: 'KAPAK TASARIMI TAMAMLANDI', coverTitle: 'Kitabın için özgün renk ve tipografi dünyası hazır.', coverBody: 'Kapak, sayfa düzeni ve içerik birlikte satışa uygun bir ürün olarak paketlendi.', pdf: 'PDF olarak kaydet', fresh: 'Yeni kitap oluştur →', publisher: 'EBOOKERA YAYINLARI', toc: 'İçindekiler', chapter: 'BÖLÜM', takeaway: 'Bu bölümden aklında kalsın' };
-  page.innerHTML = `<div class="welcome"><span>${copy.done}</span><h2>${escapeHtml(project.title)}</h2><p>${escapeHtml(project.subtitle || copy.desc)}</p></div><div class="cover-finish"><div class="cover-swatch" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>EBOOKERA STUDIO</small><b>${escapeHtml(project.title)}</b><i>${escapeHtml(project.subtitle || cover.label)}</i></div><div><span class="kicker">${copy.coverDone}</span><h3>${copy.coverTitle}</h3><p>${copy.coverBody}</p></div></div><div class="book-actions"><button class="button dark" id="print-book">${copy.pdf}</button><button class="button primary" id="new-book">${copy.fresh}</button></div><article class="reader" id="reader"><div class="reader-cover" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>${copy.publisher}</small><h1>${escapeHtml(project.title)}</h1><p>${escapeHtml(project.subtitle || '')}</p><b>2026</b></div><div class="reader-page toc"><h2>${copy.toc}</h2>${project.content.map((c, i) => `<p><span>${String(i + 1).padStart(2, '0')}</span>${escapeHtml(c.title)}</p>`).join('')}</div>${project.content.map((chapter, i) => `<section class="reader-page"><small>${copy.chapter} ${String(i + 1).padStart(2, '0')}</small><h2>${escapeHtml(chapter.title)}</h2><p class="intro">${escapeHtml(chapter.intro)}</p>${chapter.sections.map(s => `<h3>${escapeHtml(s.heading)}</h3><p>${escapeHtml(s.body)}</p>`).join('')}<aside><b>${copy.takeaway}</b><p>${escapeHtml(chapter.takeaway)}</p></aside></section>`).join('')}</article>`;
-  $('#new-book').onclick = () => { project = { idea: '', type: 'guide', tone: 'Samimi ve güven veren', language: 'tr', chapterCount: 18, title: '', subtitle: '', titleOptions: [], chapters: [], content: [], coverChoice: 'editorial' }; $('#book-idea').value = ''; $('#book-type').value = 'guide'; $('#book-language').value = 'tr'; $('#book-length').value = '18'; updateIdeaCount(); updateFormatSummary(); show('studio'); }; $('#print-book').onclick = printBook;
+  const uiEn = uiLanguage === 'en'; const bookEn = project.language === 'en';
+  const copy = uiEn ? { done: 'COMPLETE · COVER + CONTENT', desc: 'Your original AI-assisted ebook draft.', coverDone: 'COVER DESIGN COMPLETE', coverTitle: 'A distinct color and typography system is ready for your book.', coverBody: 'The cover, layout, and content are packaged as one publication-ready product.', pdf: 'Save as PDF', fresh: 'Create another book →' } : { done: 'TAMAMLANDI · KAPAK + İÇERİK', desc: 'Yapay zekâ ile oluşturulan özgün e-kitap taslağın.', coverDone: 'KAPAK TASARIMI TAMAMLANDI', coverTitle: 'Kitabın için özgün renk ve tipografi dünyası hazır.', coverBody: 'Kapak, sayfa düzeni ve içerik birlikte satışa uygun bir ürün olarak paketlendi.', pdf: 'PDF olarak kaydet', fresh: 'Yeni kitap oluştur →' };
+  const readerCopy = bookEn ? { publisher: 'EBOOKERA PUBLISHING', toc: 'Contents', chapter: 'CHAPTER', takeaway: 'Key takeaway' } : { publisher: 'EBOOKERA YAYINLARI', toc: 'İçindekiler', chapter: 'BÖLÜM', takeaway: 'Bu bölümden aklında kalsın' };
+  page.innerHTML = `<div class="welcome"><span>${copy.done}</span><h2>${escapeHtml(project.title)}</h2><p>${escapeHtml(project.subtitle || copy.desc)}</p></div><div class="cover-finish"><div class="cover-swatch" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>EBOOKERA STUDIO</small><b>${escapeHtml(project.title)}</b><i>${escapeHtml(project.subtitle || cover.label)}</i></div><div><span class="kicker">${copy.coverDone}</span><h3>${copy.coverTitle}</h3><p>${copy.coverBody}</p></div></div><div class="book-actions"><button class="button dark" id="print-book">${copy.pdf}</button><button class="button primary" id="new-book">${copy.fresh}</button></div><article class="reader" id="reader"><div class="reader-cover" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>${readerCopy.publisher}</small><h1>${escapeHtml(project.title)}</h1><p>${escapeHtml(project.subtitle || '')}</p><b>2026</b></div><div class="reader-page toc"><h2>${readerCopy.toc}</h2>${project.content.map((c, i) => `<p><span>${String(i + 1).padStart(2, '0')}</span>${escapeHtml(c.title)}</p>`).join('')}</div>${project.content.map((chapter, i) => `<section class="reader-page"><small>${readerCopy.chapter} ${String(i + 1).padStart(2, '0')}</small><h2>${escapeHtml(chapter.title)}</h2><p class="intro">${escapeHtml(chapter.intro)}</p>${chapter.sections.map(s => `<h3>${escapeHtml(s.heading)}</h3><p>${escapeHtml(s.body)}</p>`).join('')}<aside><b>${readerCopy.takeaway}</b><p>${escapeHtml(chapter.takeaway)}</p></aside></section>`).join('')}</article>`;
+  $('#new-book').onclick = () => { project = { idea: '', type: 'guide', tone: 'Samimi ve güven veren', language: uiLanguage, chapterCount: 18, title: '', subtitle: '', titleOptions: [], chapters: [], content: [], coverChoice: 'editorial', generationCostCharged: 0 }; $('#book-idea').value = ''; $('#book-type').value = 'guide'; $('#book-language').value = uiLanguage; $('#book-length').value = '18'; updateIdeaCount(); updateFormatSummary(); show('studio'); }; $('#print-book').onclick = printBook;
 }
 function printBook() {
   const content = $('#reader').innerHTML;
@@ -257,4 +293,8 @@ function printBook() {
 }
 
 $('#color-button').onclick = () => { notify('Boyama kitabı üretim motoru ikinci fazda eklenecek. İlk sürümde e-kitap üretimi aktiftir.'); };
-$('.price-card .button').onclick = async () => { try { const { url } = await request('/api/create-checkout', {}); window.location.assign(url); } catch (error) { notify(error.message, true); } };
+$$('[data-upgrade]').forEach(button => button.onclick = async () => {
+  if (!userEmail) return openAuth();
+  try { setButton(button, uiLanguage === 'en' ? 'Opening checkout…' : 'Ödeme açılıyor…', true); const { url } = await request('/api/create-checkout', {}); window.location.assign(url); }
+  catch (error) { notify(error.message, true); setButton(button, '', false); }
+});
