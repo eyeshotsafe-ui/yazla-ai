@@ -24,8 +24,8 @@ async function createJsonResponse({ name, schema, system, input, maxOutputTokens
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        'HTTP-Referer': process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://bu-blond.vercel.app',
-        'X-Title': 'Yazla'
+        'HTTP-Referer': process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://ebookera.vercel.app',
+        'X-Title': 'Ebookera'
       },
       body: JSON.stringify({
         model: process.env.OPENROUTER_MODEL || 'openrouter/free',

@@ -1,6 +1,6 @@
-# Yazla MVP
+# Ebookera MVP
 
-Yazla, bir fikirden Türkçe e-kitap planı ve bölüm içeriği üreten Vercel tabanlı bir MVP'dir.
+Ebookera, tek bir fikirden Türkçe veya İngilizce, satışa hazır uzun biçimli e-kitap üreten Vercel tabanlı bir yayın stüdyosudur.
 
 ## Vercel ortam değişkenleri
 

@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   try {
     const response = await fetch(`${process.env.POLAR_SERVER || 'https://api.polar.sh/v1'}/checkouts/`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.POLAR_ACCESS_TOKEN}` },
-      body: JSON.stringify({ products: [process.env.POLAR_PRODUCT_ID], success_url: `${origin}/?payment=success`, return_url: origin, customer_ip_address: customerIpAddress, metadata: { product: 'yazla-uretici' } })
+      body: JSON.stringify({ products: [process.env.POLAR_PRODUCT_ID], success_url: `${origin}/?payment=success`, return_url: origin, customer_ip_address: customerIpAddress, metadata: { product: 'ebookera-creator' } })
     });
     const checkout = await response.json();
     if (!response.ok) throw new Error(checkout?.detail || 'Polar checkout oluşturulamadı.');

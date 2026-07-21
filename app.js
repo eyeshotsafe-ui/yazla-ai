@@ -2,10 +2,10 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const app = $('#app'), landing = $('main'), toast = $('#toast');
 const screens = ['dashboard', 'studio', 'plan', 'generating', 'coloring', 'library'];
-const supabaseClient = window.supabase?.createClient(window.YAZLA_CONFIG.supabaseUrl, window.YAZLA_CONFIG.supabasePublishableKey);
+const supabaseClient = window.supabase?.createClient(window.EBOOKERA_CONFIG.supabaseUrl, window.EBOOKERA_CONFIG.supabasePublishableKey);
 let project = { idea: '', type: 'Pratik rehber', tone: 'Samimi ve güven veren', language: 'tr', chapterCount: 18, title: '', subtitle: '', titleOptions: [], chapters: [], content: [], coverChoice: 'editorial' };
 let userEmail = '';
-let credits = Number(localStorage.getItem('yazla-credits') || 48);
+let credits = Number(localStorage.getItem('ebookera-credits') || localStorage.getItem('yazla-credits') || 48);
 
 function openAuth() { $('#auth-modal').classList.remove('hidden'); setTimeout(() => $('#login-email').focus(), 120); }
 function closeAuth() { $('#auth-modal').classList.add('hidden'); }
@@ -23,7 +23,7 @@ async function initAuth() {
     if (userEmail) { $('.profile b').textContent = userEmail.split('@')[0]; $('.profile small').textContent = userEmail; closeAuth(); if (_event === 'SIGNED_IN') show('dashboard'); }
   });
 }
-function updateCredits(amount = credits) { credits = Math.max(0, amount); localStorage.setItem('yazla-credits', credits); $('#credit-count').textContent = credits; }
+function updateCredits(amount = credits) { credits = Math.max(0, amount); localStorage.setItem('ebookera-credits', credits); $('#credit-count').textContent = credits; }
 
 function show(screen) {
   if (screen === 'landing') { app.classList.add('hidden'); landing.classList.remove('hidden'); $('.topbar').classList.remove('hidden'); window.scrollTo(0, 0); return; }
@@ -222,13 +222,13 @@ function createCoverFor(book) {
   const pick = choices[book.coverChoice] || choices.editorial;
   return { background: pick[0], accent: pick[1], label: book.type || 'Pratik rehber' };
 }
-function booksKey() { return `yazla-books-${userEmail || 'guest'}`; }
+function booksKey() { return `ebookera-books-${userEmail || 'guest'}`; }
 function saveProject() { const books = savedBooks(); books.unshift({ ...project, savedAt: new Date().toISOString() }); localStorage.setItem(booksKey(), JSON.stringify(books.slice(0, 10))); }
-function savedBooks() { try { return JSON.parse(localStorage.getItem(booksKey()) || '[]'); } catch { return []; } }
+function savedBooks() { try { return JSON.parse(localStorage.getItem(booksKey()) || localStorage.getItem(`yazla-books-${userEmail || 'guest'}`) || '[]'); } catch { return []; } }
 function countWords(book) { return (book.content || []).reduce((total, chapter) => total + JSON.stringify(chapter).split(/\s+/).length, 0); }
 function projectCard(book, index) {
   const cover = book.cover || createCoverFor(book); const date = book.savedAt ? new Date(book.savedAt).toLocaleDateString('tr-TR') : 'Taslak';
-  return `<button class="project-card saved-project" data-project-index="${index}"><div class="project-cover" style="background:linear-gradient(145deg,${cover.background},#17231e)"><small>YAZLA STUDIO</small>${escapeHtml(book.title || 'İsimsiz kitap')}</div><span>Hazır</span><h3>${escapeHtml(book.title || 'İsimsiz kitap')}</h3><p>${date} · ${book.content?.length || 0} bölüm</p></button>`;
+  return `<button class="project-card saved-project" data-project-index="${index}"><div class="project-cover" style="background:linear-gradient(145deg,${cover.background},#17231e)"><small>EBOOKERA STUDIO</small>${escapeHtml(book.title || 'İsimsiz kitap')}</div><span>Hazır</span><h3>${escapeHtml(book.title || 'İsimsiz kitap')}</h3><p>${date} · ${book.content?.length || 0} bölüm</p></button>`;
 }
 function bindProjectCards(books) { $$('[data-project-index]').forEach(card => card.onclick = () => { project = books[Number(card.dataset.projectIndex)]; renderBook(); show('library'); }); }
 function renderDashboard() {
@@ -239,15 +239,15 @@ function renderDashboard() {
 }
 function renderLibrary() {
   const books = savedBooks(); const page = $('#library');
-  page.innerHTML = `<div class="welcome"><span>KİTAPLIĞIN</span><h2>Ürettiğin işler</h2><p>Projelerini görüntüle ve satışa hazır dosyalarını indir.</p></div><div class="projects library-projects">${books.length ? books.map((book, index) => projectCard(book, index)).join('') : '<div class="empty-library"><span>✦</span><h3>İlk kitabın burada görünecek.</h3><p>Bir fikirle başla; Yazla planı, kapağı ve içeriği birlikte hazırlasın.</p><button class="button primary" data-empty-create>İlk kitabımı oluştur →</button></div>'}</div>`;
+  page.innerHTML = `<div class="welcome"><span>KİTAPLIĞIN</span><h2>Ürettiğin işler</h2><p>Projelerini görüntüle ve satışa hazır dosyalarını indir.</p></div><div class="projects library-projects">${books.length ? books.map((book, index) => projectCard(book, index)).join('') : '<div class="empty-library"><span>✦</span><h3>İlk kitabın burada görünecek.</h3><p>Bir fikirle başla; Ebookera planı, kapağı ve içeriği birlikte hazırlasın.</p><button class="button primary" data-empty-create>İlk kitabımı oluştur →</button></div>'}</div>`;
   bindProjectCards(books); $('[data-empty-create]')?.addEventListener('click', () => show('studio'));
 }
 function renderBook() {
   const page = $('#library');
   const cover = project.cover || createCover();
   const en = project.language === 'en';
-  const copy = en ? { done: 'COMPLETE · COVER + CONTENT', desc: 'Your original AI-assisted ebook draft.', coverDone: 'COVER DESIGN COMPLETE', coverTitle: 'A distinct color and typography system is ready for your book.', coverBody: 'The cover, layout, and content are packaged as one publication-ready product.', pdf: 'Save as PDF', fresh: 'Create another book →', publisher: 'YAZLA PUBLISHING', toc: 'Contents', chapter: 'CHAPTER', takeaway: 'Key takeaway' } : { done: 'TAMAMLANDI · KAPAK + İÇERİK', desc: 'Yapay zekâ ile oluşturulan özgün e-kitap taslağın.', coverDone: 'KAPAK TASARIMI TAMAMLANDI', coverTitle: 'Kitabın için özgün renk ve tipografi dünyası hazır.', coverBody: 'Kapak, sayfa düzeni ve içerik birlikte satışa uygun bir ürün olarak paketlendi.', pdf: 'PDF olarak kaydet', fresh: 'Yeni kitap oluştur →', publisher: 'YAZLA YAYINLARI', toc: 'İçindekiler', chapter: 'BÖLÜM', takeaway: 'Bu bölümden aklında kalsın' };
-  page.innerHTML = `<div class="welcome"><span>${copy.done}</span><h2>${escapeHtml(project.title)}</h2><p>${escapeHtml(project.subtitle || copy.desc)}</p></div><div class="cover-finish"><div class="cover-swatch" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>YAZLA STUDIO</small><b>${escapeHtml(project.title)}</b><i>${escapeHtml(project.subtitle || cover.label)}</i></div><div><span class="kicker">${copy.coverDone}</span><h3>${copy.coverTitle}</h3><p>${copy.coverBody}</p></div></div><div class="book-actions"><button class="button dark" id="print-book">${copy.pdf}</button><button class="button primary" id="new-book">${copy.fresh}</button></div><article class="reader" id="reader"><div class="reader-cover" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>${copy.publisher}</small><h1>${escapeHtml(project.title)}</h1><p>${escapeHtml(project.subtitle || '')}</p><b>2026</b></div><div class="reader-page toc"><h2>${copy.toc}</h2>${project.content.map((c, i) => `<p><span>${String(i + 1).padStart(2, '0')}</span>${escapeHtml(c.title)}</p>`).join('')}</div>${project.content.map((chapter, i) => `<section class="reader-page"><small>${copy.chapter} ${String(i + 1).padStart(2, '0')}</small><h2>${escapeHtml(chapter.title)}</h2><p class="intro">${escapeHtml(chapter.intro)}</p>${chapter.sections.map(s => `<h3>${escapeHtml(s.heading)}</h3><p>${escapeHtml(s.body)}</p>`).join('')}<aside><b>${copy.takeaway}</b><p>${escapeHtml(chapter.takeaway)}</p></aside></section>`).join('')}</article>`;
+  const copy = en ? { done: 'COMPLETE · COVER + CONTENT', desc: 'Your original AI-assisted ebook draft.', coverDone: 'COVER DESIGN COMPLETE', coverTitle: 'A distinct color and typography system is ready for your book.', coverBody: 'The cover, layout, and content are packaged as one publication-ready product.', pdf: 'Save as PDF', fresh: 'Create another book →', publisher: 'EBOOKERA PUBLISHING', toc: 'Contents', chapter: 'CHAPTER', takeaway: 'Key takeaway' } : { done: 'TAMAMLANDI · KAPAK + İÇERİK', desc: 'Yapay zekâ ile oluşturulan özgün e-kitap taslağın.', coverDone: 'KAPAK TASARIMI TAMAMLANDI', coverTitle: 'Kitabın için özgün renk ve tipografi dünyası hazır.', coverBody: 'Kapak, sayfa düzeni ve içerik birlikte satışa uygun bir ürün olarak paketlendi.', pdf: 'PDF olarak kaydet', fresh: 'Yeni kitap oluştur →', publisher: 'EBOOKERA YAYINLARI', toc: 'İçindekiler', chapter: 'BÖLÜM', takeaway: 'Bu bölümden aklında kalsın' };
+  page.innerHTML = `<div class="welcome"><span>${copy.done}</span><h2>${escapeHtml(project.title)}</h2><p>${escapeHtml(project.subtitle || copy.desc)}</p></div><div class="cover-finish"><div class="cover-swatch" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>EBOOKERA STUDIO</small><b>${escapeHtml(project.title)}</b><i>${escapeHtml(project.subtitle || cover.label)}</i></div><div><span class="kicker">${copy.coverDone}</span><h3>${copy.coverTitle}</h3><p>${copy.coverBody}</p></div></div><div class="book-actions"><button class="button dark" id="print-book">${copy.pdf}</button><button class="button primary" id="new-book">${copy.fresh}</button></div><article class="reader" id="reader"><div class="reader-cover" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>${copy.publisher}</small><h1>${escapeHtml(project.title)}</h1><p>${escapeHtml(project.subtitle || '')}</p><b>2026</b></div><div class="reader-page toc"><h2>${copy.toc}</h2>${project.content.map((c, i) => `<p><span>${String(i + 1).padStart(2, '0')}</span>${escapeHtml(c.title)}</p>`).join('')}</div>${project.content.map((chapter, i) => `<section class="reader-page"><small>${copy.chapter} ${String(i + 1).padStart(2, '0')}</small><h2>${escapeHtml(chapter.title)}</h2><p class="intro">${escapeHtml(chapter.intro)}</p>${chapter.sections.map(s => `<h3>${escapeHtml(s.heading)}</h3><p>${escapeHtml(s.body)}</p>`).join('')}<aside><b>${copy.takeaway}</b><p>${escapeHtml(chapter.takeaway)}</p></aside></section>`).join('')}</article>`;
   $('#new-book').onclick = () => { project = { idea: '', type: 'guide', tone: 'Samimi ve güven veren', language: 'tr', chapterCount: 18, title: '', subtitle: '', titleOptions: [], chapters: [], content: [], coverChoice: 'editorial' }; $('#book-idea').value = ''; $('#book-type').value = 'guide'; $('#book-language').value = 'tr'; $('#book-length').value = '18'; updateIdeaCount(); updateFormatSummary(); show('studio'); }; $('#print-book').onclick = printBook;
 }
 function printBook() {
