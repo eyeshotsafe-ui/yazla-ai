@@ -1,6 +1,7 @@
 {
   "functions": {
     "api/generate-chapter.js": { "maxDuration": 60 },
-    "api/generate-plan.js": { "maxDuration": 60 }
+    "api/generate-plan.js": { "maxDuration": 60 },
+    "api/generate-titles.js": { "maxDuration": 30 }
   }
 }
