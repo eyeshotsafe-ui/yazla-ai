@@ -16,10 +16,11 @@ function parseModelJson(value) {
   catch { throw new Error('Ücretsiz model yanıtı okunamadı. Lütfen yeniden deneyin.'); }
 }
 
-async function createJsonResponse({ name, schema, system, input, maxOutputTokens = 5000 }) {
+async function createJsonResponse({ name, schema, system, input, maxOutputTokens = 5000, timeoutMs = 42000 }) {
   if (process.env.OPENROUTER_API_KEY) {
     const response = await fetch(OPENROUTER_URL, {
       method: 'POST',
+      signal: AbortSignal.timeout(timeoutMs),
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,

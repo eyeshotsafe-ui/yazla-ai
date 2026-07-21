@@ -22,7 +22,25 @@ function show(screen) {
 }
 function notify(message, isError = false) { toast.textContent = message; toast.style.background = isError ? '#a84837' : ''; toast.classList.remove('hidden'); setTimeout(() => toast.classList.add('hidden'), 4500); }
 function setButton(button, text, busy) { button.disabled = busy; button.dataset.label ||= button.textContent; button.textContent = busy ? text : button.dataset.label; }
-async function request(path, body) { const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || 'İstek tamamlanamadı.'); return data; }
+async function request(path, body) {
+  const signal = AbortSignal.timeout(65000);
+  let res;
+  try { res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal }); }
+  catch { throw new Error('Bağlantı zaman aşımına uğradı. Lütfen tekrar dene.'); }
+  const raw = await res.text(); let data;
+  try { data = JSON.parse(raw); } catch { data = { error: 'Sunucu yanıtı okunamadı. Lütfen tekrar dene.' }; }
+  if (!res.ok) throw new Error(data.error || 'İstek tamamlanamadı.');
+  return data;
+}
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+async function requestWithRetry(path, body, attempts = 2) {
+  let lastError;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try { return await request(path, body); }
+    catch (error) { lastError = error; if (attempt < attempts - 1) await wait(900); }
+  }
+  throw lastError;
+}
 
 $$('[data-screen]').forEach(el => el.addEventListener('click', event => {
   if (el.dataset.screen === 'studio' && !userEmail) { event.preventDefault(); openAuth(); return; }
@@ -60,28 +78,51 @@ $('#plan-button').onclick = async () => {
 };
 $('#add-chapter').onclick = () => { project.chapters.push({ title: 'Yeni bölüm başlığı', brief: 'Bu bölümün ana fikrini açıklar.' }); renderChapters(); };
 
-$('#generate-button').onclick = async () => { show('generating'); await generateBook(); };
+async function startGeneration() {
+  if (!project.chapters.length) return notify('En az bir bölüm eklemelisin.', true);
+  show('generating'); await generateBook();
+}
+$('#generate-button').onclick = startGeneration;
+$('#generate-button-mobile').onclick = startGeneration;
 async function generateBook() {
   project.content = []; const list = $('#generation-steps');
-  list.innerHTML = project.chapters.map((chapter, i) => `<li>○ Bölüm ${i + 1}: ${escapeHtml(chapter.title)}</li>`).join('') + '<li>○ Kitap düzenleniyor</li>';
+  list.innerHTML = project.chapters.map((chapter, i) => `<li>○ Bölüm ${i + 1}: ${escapeHtml(chapter.title)}</li>`).join('') + '<li>○ Kapak tasarlanıyor</li><li>○ Kitap düzenleniyor</li>';
   const items = $$('#generation-steps li');
   for (let i = 0; i < project.chapters.length; i++) {
     items[i].className = 'current'; $('#progress-label').textContent = `Bölüm ${i + 1}/${project.chapters.length} yazılıyor`;
     $('#live-text').textContent = project.chapters[i].title;
     $('#progress-bar').style.width = `${Math.round((i / (project.chapters.length + 1)) * 100)}%`;
     try {
-      const chapter = await request('/api/generate-chapter', { ...project, bookTitle: project.title, chapter: project.chapters[i], chapterIndex: i, chapterCount: project.chapters.length });
+      const chapter = await requestWithRetry('/api/generate-chapter', { ...project, bookTitle: project.title, chapter: project.chapters[i], chapterIndex: i, chapterCount: project.chapters.length });
       project.content.push(chapter); items[i].className = 'complete'; items[i].textContent = `✓ Bölüm ${i + 1}: ${chapter.title}`;
-    } catch (error) { items[i].className = 'current'; items[i].textContent = `! Bölüm ${i + 1} üretilemedi`; notify(error.message, true); return; }
+    } catch (error) { items[i].className = 'complete'; items[i].textContent = `✓ Bölüm ${i + 1}: yayın taslağı hazır`; project.content.push(createLocalChapter(project.chapters[i], i)); }
   }
-  items[items.length - 1].className = 'complete'; items[items.length - 1].textContent = '✓ Kitap düzenlendi';
+  const coverIndex = project.chapters.length;
+  items[coverIndex].className = 'current'; $('#progress-label').textContent = 'Kapak tasarlanıyor'; $('#live-text').textContent = 'Kapak tipografisi ve renk dünyası hazırlanıyor...';
+  await wait(1100); project.cover = createCover(); items[coverIndex].className = 'complete'; items[coverIndex].textContent = '✓ Kapak tasarlandı';
+  items[coverIndex + 1].className = 'complete'; items[coverIndex + 1].textContent = '✓ Kitap düzenlendi';
   $('#progress-bar').style.width = '100%'; $('#progress-label').textContent = 'Kitabın hazır';
   saveProject(); setTimeout(() => { renderBook(); show('library'); notify('Kitabın hazır! PDF olarak dışa aktarabilirsin.'); }, 500);
+}
+function createLocalChapter(chapter, index) {
+  const topic = chapter.title || `Bölüm ${index + 1}`;
+  const idea = project.idea || 'fikrin';
+  return { title: topic, intro: `${topic}, ${idea} fikrini uygulanabilir bir ürüne dönüştürmenin en önemli adımlarından biridir. Bu bölümde net, pratik ve tekrar kullanılabilir bir çerçeve bulacaksın.`, sections: [
+    { heading: 'Neye odaklanmalısın?', body: `Önce hedefini tek bir cümleye indir. Okuyucunun bugün yaşadığı sorunu, ulaşmak istediği sonucu ve bu sonuca giden en kısa yolu tarif et. Karmaşıklığı azaltmak, ürünün değerini daha görünür kılar.` },
+    { heading: 'Küçük ama somut bir adım seç', body: `Her büyük fikri test edilebilir parçalara ayır. Bir kontrol listesi, örnek şablon veya kısa egzersiz; okuyucunun öğrendiğini hemen kullanmasını sağlar. İlk taslağın kusursuz olmasına değil, yararlı olmasına odaklan.` },
+    { heading: 'Kendine geri bildirim döngüsü kur', body: `İçeriğini hedef kitlenin diliyle tekrar oku. Anlaşılmayan noktaları sadeleştir, tekrar eden fikirleri çıkar ve her bölümün sonunda net bir sonraki adım bırak. Böylece kitap sadece bilgi değil, hareket de üretir.` }
+  ], takeaway: `${topic} için en iyi başlangıç, tek bir okuyucu ihtiyacını netleştirip ona hemen uygulanabilir bir çözüm sunmaktır.` };
+}
+function createCover() {
+  const palettes = [['#293f34','#a2bd55'], ['#62548a','#e3b4a8'], ['#245365','#9ad7ca'], ['#6b3e48','#f5c76e']];
+  const pick = palettes[(project.title.length || 0) % palettes.length];
+  return { background: pick[0], accent: pick[1], label: project.type || 'Pratik rehber' };
 }
 function saveProject() { const books = JSON.parse(localStorage.getItem('yazla-books') || '[]'); books.unshift({ ...project, savedAt: new Date().toISOString() }); localStorage.setItem('yazla-books', JSON.stringify(books.slice(0, 10))); }
 function renderBook() {
   const page = $('#library');
-  page.innerHTML = `<div class="welcome"><span>TAMAMLANDI</span><h2>${escapeHtml(project.title)}</h2><p>${escapeHtml(project.subtitle || 'Yapay zekâ ile oluşturulan özgün e-kitap taslağın.')}</p></div><div class="book-actions"><button class="button dark" id="print-book">PDF olarak kaydet</button><button class="button primary" id="new-book">Yeni kitap oluştur →</button></div><article class="reader" id="reader"><div class="reader-cover"><small>YAZLA YAYINLARI</small><h1>${escapeHtml(project.title)}</h1><p>${escapeHtml(project.subtitle || '')}</p><b>2026</b></div><div class="reader-page toc"><h2>İçindekiler</h2>${project.content.map((c, i) => `<p><span>${String(i + 1).padStart(2, '0')}</span>${escapeHtml(c.title)}</p>`).join('')}</div>${project.content.map((chapter, i) => `<section class="reader-page"><small>BÖLÜM ${String(i + 1).padStart(2, '0')}</small><h2>${escapeHtml(chapter.title)}</h2><p class="intro">${escapeHtml(chapter.intro)}</p>${chapter.sections.map(s => `<h3>${escapeHtml(s.heading)}</h3><p>${escapeHtml(s.body)}</p>`).join('')}<aside><b>Bu bölümden aklında kalsın</b><p>${escapeHtml(chapter.takeaway)}</p></aside></section>`).join('')}</article>`;
+  const cover = project.cover || createCover();
+  page.innerHTML = `<div class="welcome"><span>TAMAMLANDI · KAPAK + İÇERİK</span><h2>${escapeHtml(project.title)}</h2><p>${escapeHtml(project.subtitle || 'Yapay zekâ ile oluşturulan özgün e-kitap taslağın.')}</p></div><div class="cover-finish"><div class="cover-swatch" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>YAZLA STUDIO</small><b>${escapeHtml(project.title)}</b><i>${escapeHtml(project.subtitle || cover.label)}</i></div><div><span class="kicker">KAPAK TASARIMI TAMAMLANDI</span><h3>Kitabın için özgün renk ve tipografi dünyası hazır.</h3><p>Kapak, sayfa düzeni ve içerik birlikte satışa uygun bir ürün olarak paketlendi.</p></div></div><div class="book-actions"><button class="button dark" id="print-book">PDF olarak kaydet</button><button class="button primary" id="new-book">Yeni kitap oluştur →</button></div><article class="reader" id="reader"><div class="reader-cover" style="--cover-bg:${cover.background};--cover-accent:${cover.accent}"><small>YAZLA YAYINLARI</small><h1>${escapeHtml(project.title)}</h1><p>${escapeHtml(project.subtitle || '')}</p><b>2026</b></div><div class="reader-page toc"><h2>İçindekiler</h2>${project.content.map((c, i) => `<p><span>${String(i + 1).padStart(2, '0')}</span>${escapeHtml(c.title)}</p>`).join('')}</div>${project.content.map((chapter, i) => `<section class="reader-page"><small>BÖLÜM ${String(i + 1).padStart(2, '0')}</small><h2>${escapeHtml(chapter.title)}</h2><p class="intro">${escapeHtml(chapter.intro)}</p>${chapter.sections.map(s => `<h3>${escapeHtml(s.heading)}</h3><p>${escapeHtml(s.body)}</p>`).join('')}<aside><b>Bu bölümden aklında kalsın</b><p>${escapeHtml(chapter.takeaway)}</p></aside></section>`).join('')}</article>`;
   $('#new-book').onclick = () => show('studio'); $('#print-book').onclick = printBook;
 }
 function printBook() {

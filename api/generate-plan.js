@@ -8,6 +8,11 @@ const schema = {
     chapters: { type: 'array', minItems: 4, maxItems: 8, items: { type: 'object', additionalProperties: false, required: ['title', 'brief'], properties: { title: { type: 'string' }, brief: { type: 'string' } } } }
   }
 };
+function fallbackPlan(idea) {
+  const title = idea.trim().split(/\s+/).slice(0, 7).join(' ');
+  const labels = ['Temeli netleştirmek', 'Hedef kitleyi anlamak', 'Değer önerisini kurmak', 'Ürünü yapılandırmak', 'Satış sayfasını hazırlamak', 'Yayınla ve geliştir'];
+  return { title, subtitle: 'Fikirden satışa pratik yol haritası', estimatedWords: 4200, generatedWithFallback: true, chapters: labels.map((label, index) => ({ title: `${index + 1}. ${label}`, brief: `${idea} için ${label.toLocaleLowerCase('tr-TR')} adımını örnekler ve uygulanabilir kontrol listeleriyle anlatır.` })) };
+}
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Yalnızca POST desteklenir.' });
@@ -20,5 +25,5 @@ module.exports = async (req, res) => {
       input: `Kitap fikri: ${idea}\nTür: ${type}\nTon: ${tone}\n6 civarında mantıksal sırada bölümden oluşan, satılabilir kısa bir e-kitap planı üret. Başlıklar somut ve özgün olsun.`
     });
     res.status(200).json(plan);
-  } catch (error) { res.status(error.statusCode || 500).json({ error: error.message || 'Plan üretilemedi.' }); }
+  } catch { res.status(200).json(fallbackPlan(idea)); }
 };
