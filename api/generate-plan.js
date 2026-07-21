@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
   if (!idea || idea.length < 8) return res.status(400).json({ error: 'Lütfen daha ayrıntılı bir kitap fikri girin.' });
   try {
     const plan = await createJsonResponse({
-      name: 'turkish_book_plan', schema,
+      name: 'turkish_book_plan', schema, maxOutputTokens: 4200, timeoutMs: 18000,
       system: language === 'en' ? 'You are an experienced English-language book editor. Create original, useful, verifiable commercial ebook plans. Never invent statistics or copy copyrighted text. Respond entirely in English.' : 'Sen deneyimli bir Türkçe kitap editörüsün. Özgün, faydalı ve doğrulanabilir ticari e-kitap planları hazırlarsın. Uydurma istatistik veya telifli metin kullanmazsın. Yanıtın bütünüyle Türkçe olmalıdır.',
       input: `Book idea / Kitap fikri: ${idea}\nFormat: ${type}\nTone / Ton: ${tone}\nLanguage / Dil: ${language}\nCreate exactly ${chapterCount} logically ordered chapters and exactly 3 strong title/subtitle options. Produce a detailed, commercially useful ebook plan.`
     });

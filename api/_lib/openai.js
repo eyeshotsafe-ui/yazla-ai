@@ -50,9 +50,10 @@ async function createJsonResponse({ name, schema, system, input, maxOutputTokens
   }
   const response = await fetch(OPENAI_URL, {
     method: 'POST',
+    signal: AbortSignal.timeout(timeoutMs),
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
     body: JSON.stringify({
-      model: process.env.OPENAI_TEXT_MODEL || 'gpt-5.6-terra',
+      model: process.env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini',
       input: [{ role: 'system', content: system }, { role: 'user', content: input }],
       text: { format: { type: 'json_schema', name, strict: true, schema } },
       max_output_tokens: maxOutputTokens
