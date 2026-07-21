@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
   if (!idea || !chapter?.title) return res.status(400).json({ error: 'Bölüm bilgisi eksik.' });
   try {
     const content = await createJsonResponse({
-      name: 'turkish_book_chapter', schema, maxOutputTokens: 2600,
+      name: 'turkish_book_chapter', schema, maxOutputTokens: 2600, timeoutMs: 12000,
       system: 'Sen titiz bir Türkçe kitap yazarı ve editörsün. Özgün, anlaşılır, pratik ve güvenli içerik yazarsın. Tıbbi, hukuki ya da finansal konularda kesin tavsiye, uydurma kaynak veya sonuç garantisi vermezsin. Metin, dijital kitap için temiz paragraflar halinde Türkçe yazılmalıdır.',
       input: `Kitap başlığı: ${bookTitle}\nAna fikir: ${idea}\nTür: ${type}\nYazım tonu: ${tone}\nBölüm ${chapterIndex + 1}/${chapterCount}: ${chapter.title}\nBölüm özeti: ${chapter.brief}\nBu bölümü yaklaşık 450-600 kelime olacak şekilde yaz. Giriş, 3-5 alt başlık ve uygulanabilir bir kapanış çıkarımı sun.`
     });
